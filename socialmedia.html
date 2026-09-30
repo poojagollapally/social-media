@@ -1,0 +1,390 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ConnectHub - Social Media</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Arial,sans-serif;
+  background:#f4f6f8;color:#222;
+}
+body.dark{background:#18191a;color:#eee}
+header{
+  height:60px;background:#1877f2;color:white;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 5%;position:sticky;top:0;z-index:10;
+}
+.logo{font-size:25px;font-weight:bold}
+.search{
+  width:300px;padding:10px 15px;border:0;
+  border-radius:20px;outline:none;
+}
+.layout{
+  max-width:1200px;margin:auto;
+  display:grid;grid-template-columns:220px 1fr 260px;
+  gap:20px;padding:20px;
+}
+.sidebar,.rightbar{
+  position:sticky;top:80px;height:max-content;
+}
+.menu{
+  background:white;border-radius:12px;padding:10px;
+}
+.dark .menu,.dark .card{background:#242526;color:white}
+.menu button{
+  width:100%;border:0;background:none;
+  padding:14px;text-align:left;font-size:16px;
+  cursor:pointer;border-radius:8px;
+}
+.menu button:hover{background:#eee}
+.dark .menu button{color:white}
+.card{
+  background:white;border-radius:12px;
+  padding:18px;margin-bottom:15px;
+  box-shadow:0 1px 4px #ddd;
+}
+.stories{display:flex;gap:10px;overflow:auto}
+.story{
+  min-width:100px;height:140px;border-radius:12px;
+  background:linear-gradient(#1877f2,#7b2ff7);
+  color:white;display:flex;align-items:end;
+  justify-content:center;padding:10px;font-weight:bold;
+}
+textarea,input{
+  width:100%;padding:12px;border:1px solid #ddd;
+  border-radius:8px;margin:6px 0;outline:none;
+}
+textarea{height:80px;resize:none}
+.primary{
+  background:#1877f2;color:white;border:0;
+  padding:10px 18px;border-radius:7px;cursor:pointer;
+}
+.post-head{display:flex;align-items:center;gap:10px}
+.avatar{
+  width:42px;height:42px;border-radius:50%;
+  background:#1877f2;color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
+.post-text{margin:15px 0;font-size:16px}
+.actions{display:flex;gap:8px}
+.actions button{
+  flex:1;border:0;background:#eee;padding:10px;
+  border-radius:7px;cursor:pointer;
+}
+.dark .actions button{background:#3a3b3c;color:white}
+.comment{
+  background:#f0f2f5;padding:8px;
+  border-radius:8px;margin-top:6px;
+}
+.dark .comment{background:#3a3b3c}
+.profile{text-align:center}
+.profile .avatar{
+  width:80px;height:80px;margin:auto;font-size:35px;
+}
+.online{
+  padding:10px;border-bottom:1px solid #ddd;
+}
+@media(max-width:900px){
+  .layout{grid-template-columns:180px 1fr}
+  .rightbar{display:none}
+}
+@media(max-width:650px){
+  header{padding:0 10px}
+  .search{width:130px}
+  .layout{display:block;padding:10px}
+  .sidebar{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">ConnectHub</div>
+  <input class="search" id="search"
+         placeholder="Search posts..."
+         onkeyup="searchPosts()">
+  <button onclick="darkMode()">🌙</button>
+</header>
+
+<div class="layout">
+
+<!-- LEFT SIDEBAR -->
+<aside class="sidebar">
+  <div class="menu">
+    <button onclick="home()">🏠 Home</button>
+    <button onclick="scrollToPost()">➕ Create Post</button>
+    <button onclick="alert('Explore coming soon!')">🔎 Explore</button>
+    <button onclick="alert('No new notifications')">🔔 Notifications</button>
+    <button onclick="alert('Messages coming soon!')">💬 Messages</button>
+    <button onclick="profile()">👤 Profile</button>
+    <button onclick="darkMode()">🌙 Dark Mode</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+  <!-- STORIES -->
+  <div class="card">
+    <h3>Stories</h3><br>
+    <div class="stories">
+      <div class="story">Your Story</div>
+      <div class="story">Alex</div>
+      <div class="story">Sarah</div>
+      <div class="story">John</div>
+      <div class="story">Emma</div>
+    </div>
+  </div>
+
+  <!-- CREATE POST -->
+  <div class="card" id="create">
+    <h3>Create a Post</h3>
+    <input id="username" placeholder="Your name">
+    <textarea id="postText"
+      placeholder="What's happening?"></textarea>
+    <button class="primary" onclick="createPost()">Post</button>
+  </div>
+
+  <!-- FEED -->
+  <div id="feed"></div>
+
+</main>
+
+<!-- RIGHT SIDEBAR -->
+<aside class="rightbar">
+
+  <div class="card profile">
+    <div class="avatar">👤</div>
+    <h3 id="profileName">Guest User</h3>
+    <p>ConnectHub Member</p>
+  </div>
+
+  <div class="card">
+    <h3>Online Friends</h3><br>
+    <div class="online">🟢 Alex</div>
+    <div class="online">🟢 Sarah</div>
+    <div class="online">🟢 John</div>
+  </div>
+
+  <div class="card">
+    <h3>Trending</h3><br>
+    <p>#Technology</p><br>
+    <p>#Travel</p><br>
+    <p>#Music</p>
+  </div>
+
+</aside>
+
+</div>
+
+<script>
+
+let posts=JSON.parse(localStorage.getItem("connecthub"))
+          ||[
+            {
+              id:1,
+              name:"ConnectHub",
+              text:"Welcome to your new social media platform! 🎉",
+              likes:5,
+              liked:false,
+              comments:[]
+            }
+          ];
+
+function save(){
+  localStorage.setItem("connecthub",JSON.stringify(posts));
+}
+
+function createPost(){
+
+  let name=document.getElementById("username").value.trim();
+  let text=document.getElementById("postText").value.trim();
+
+  if(!name || !text){
+    alert("Please enter your name and post.");
+    return;
+  }
+
+  posts.unshift({
+    id:Date.now(),
+    name:name,
+    text:text,
+    likes:0,
+    liked:false,
+    comments:[]
+  });
+
+  document.getElementById("profileName").innerText=name;
+  document.getElementById("postText").value="";
+
+  save();
+  showPosts();
+}
+
+function likePost(id){
+
+  let post=posts.find(p=>p.id===id);
+
+  if(!post)return;
+
+  post.liked=!post.liked;
+
+  post.likes += post.liked ? 1 : -1;
+
+  save();
+  showPosts();
+}
+
+function commentPost(id){
+
+  let input=document.getElementById("comment"+id);
+  let comment=input.value.trim();
+
+  if(!comment)return;
+
+  let post=posts.find(p=>p.id===id);
+
+  post.comments.push(comment);
+
+  input.value="";
+
+  save();
+  showPosts();
+}
+
+function deletePost(id){
+
+  posts=posts.filter(p=>p.id!==id);
+
+  save();
+  showPosts();
+}
+
+function showPosts(){
+
+  let feed=document.getElementById("feed");
+
+  feed.innerHTML="";
+
+  posts.forEach(p=>{
+
+    let comments="";
+
+    p.comments.forEach(c=>{
+      comments+=`
+        <div class="comment">
+          💬 ${escapeHTML(c)}
+        </div>`;
+    });
+
+    feed.innerHTML+=`
+
+      <div class="card post">
+
+        <div class="post-head">
+          <div class="avatar">👤</div>
+
+          <div>
+            <b>${escapeHTML(p.name)}</b>
+            <small><br>Just now</small>
+          </div>
+        </div>
+
+        <div class="post-text">
+          ${escapeHTML(p.text)}
+        </div>
+
+        <div class="actions">
+
+          <button onclick="likePost(${p.id})">
+            ${p.liked?"❤️":"🤍"} ${p.likes} Like
+          </button>
+
+          <button onclick="document
+            .getElementById('comment${p.id}')
+            .focus()">
+            💬 Comment
+          </button>
+
+          <button onclick="deletePost(${p.id})">
+            🗑 Delete
+          </button>
+
+        </div>
+
+        <input
+          id="comment${p.id}"
+          placeholder="Write a comment...">
+
+        <button class="primary"
+          onclick="commentPost(${p.id})">
+          Comment
+        </button>
+
+        ${comments}
+
+      </div>
+    `;
+  });
+}
+
+function searchPosts(){
+
+  let search=document
+    .getElementById("search")
+    .value
+    .toLowerCase();
+
+  document.querySelectorAll(".post").forEach(post=>{
+
+    post.style.display=
+      post.innerText.toLowerCase().includes(search)
+      ?"block":"none";
+
+  });
+}
+
+function darkMode(){
+  document.body.classList.toggle("dark");
+}
+
+function scrollToPost(){
+  document.getElementById("create")
+    .scrollIntoView({behavior:"smooth"});
+}
+
+function home(){
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function profile(){
+  alert("Profile: "+document.getElementById("profileName").innerText);
+}
+
+function escapeHTML(text){
+
+  return text.replace(/[&<>"']/g,function(m){
+
+    return {
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[m];
+
+  });
+}
+
+showPosts();
+
+</script>
+
+</body>
+</html>
